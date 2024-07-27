@@ -13,17 +13,17 @@ patterns = {
 }
 PII_FIELDS = ("name", "email", "phone", "ssn", "password")
 
+
 def filter_datum(
         fields: List[str], redaction: str, message: str, separator: str,
-        ) -> str:
-    """Filters a log line.
-    """
+) -> str:
+    """Filters a log line."""
     extract, replace = (patterns["extract"], patterns["replace"])
     return re.sub(extract(fields, separator), replace(redaction), message)
 
+
 def get_logger() -> logging.Logger:
-    """Creates a new logger for user data.
-    """
+    """Creates a new logger for user data."""
     logger = logging.getLogger("user_data")
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(RedactingFormatter(PII_FIELDS))
@@ -32,9 +32,9 @@ def get_logger() -> logging.Logger:
     logger.addHandler(stream_handler)
     return logger
 
+
 def get_db() -> mysql.connector.connection.MySQLConnection:
-    """Creates a connector to a database.
-    """
+    """Creates a connector to a database."""
     db_host = os.getenv("PERSONAL_DATA_DB_HOST", "localhost")
     db_name = os.getenv("PERSONAL_DATA_DB_NAME", "")
     db_user = os.getenv("PERSONAL_DATA_DB_USERNAME", "root")
@@ -48,9 +48,9 @@ def get_db() -> mysql.connector.connection.MySQLConnection:
     )
     return connection
 
+
 def main():
-    """Logs the information about user records in a table.
-    """
+    """Logs the information about user records in a table."""
     fields = "name,email,phone,ssn,password,ip,last_login,user_agent"
     columns = fields.split(',')
     query = "SELECT {} FROM users;".format(fields)
@@ -67,9 +67,10 @@ def main():
             msg = '{};'.format('; '.join(list(record)))
             info_logger.info(msg)
 
+
 class RedactingFormatter(logging.Formatter):
-    """ Redacting Formatter class
-    """
+    """Redacting Formatter class"""
+    
     REDACTION = "***"
     FORMAT = "[HOLBERTON] %(name)s %(levelname)s %(asctime)-15s: %(message)s"
     SEPARATOR = ";"
@@ -79,10 +80,10 @@ class RedactingFormatter(logging.Formatter):
         self.fields = fields
 
     def format(self, record: logging.LogRecord) -> str:
-        """Formats a LogRecord.
-        """
+        """Formats a LogRecord."""
         msg = super(RedactingFormatter, self).format(record)
         return filter_datum(self.fields, self.REDACTION, msg, self.SEPARATOR)
+
 
 if __name__ == "__main__":
     main()
